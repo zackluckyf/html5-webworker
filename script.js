@@ -1,34 +1,45 @@
 document.addEventListener("DOMContentLoaded", function(event) {
     'use strict';
 
-    var saveButton = document.getElementById('saveButton');
-    var deleteButton = document.getElementById('deleteButton');
-    var tasksBox = document.getElementById('tasksBox');
-
+    var log = null;
+    var seriesLength;
+    var generateButton;
+    var worker;
 
     (function() {
-        if (window.localStorage) {
-            if (window.localStorage.taskList != null) {
-                var tasks = window.localStorage.taskList;
-                var taskList = tasks.split(',').join('\n');
+
+        log = document.getElementById('log');
+        seriesLength = document.getElementById('seriesLength');
+        generateButton = document.getElementById('generateButton');
+        var num;
+
+        generateButton.addEventListener('click', function() {
+
+            num = parseInt(seriesLength.value);
+            while (log.firstChild) {
+                log.removeChild(log.firstChild);
             }
+            worker = new Worker('fib-worker.js');
+            worker.onmessage = messageHandler;
+            worker.onerror = errorHandler;
+            worker.postMessage(num);
+        });
+
+        function messageHandler(e) {
+            var results = e.data;
+            results.map((item) => {
+                logMsg(item);
+            });
         }
 
-        saveButton.addEventListener('click', function() {
-            save();
-            console.log('Saved!');
-        });
+        function errorHandler(e) {
+            logMsg(e.message);
+        }
 
-        deleteButton.addEventListener('click', function() {
-            window.localStorage.removeItem('taskList');
-            tasksBox.value = '';
-            console.log('Deleted!');
-        });
-
-        function save() {
-            var tasks = tasksBox.value;
-            var taskList = tasks.split('\n').join(',');
-            window.localStorage.taskList = taskList;
+        function logMsg(msg) {
+            var li = document.createElement("li");
+            li.appendChild(document.createTextNode(msg));
+            log.appendChild(li);
         }
 
     })();
